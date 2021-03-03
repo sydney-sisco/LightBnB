@@ -19,7 +19,7 @@ CREATE TABLE properties (
   description TEXT,
   thumbnail_photo_url VARCHAR(255),
   cover_photo_url VARCHAR(255), 
-  cost__per_night INT,
+  cost_per_night INT,
   parking_spaces INT,
   number_of_bathrooms INT,
   number_of_bedrooms INT,
