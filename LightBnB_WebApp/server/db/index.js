@@ -1,5 +1,5 @@
-const properties = require('./json/properties.json');
-const users = require('./json/users.json');
+const properties = require('../json/properties.json');
+const users = require('../json/users.json');
 
 const { Pool } = require('pg');
 
@@ -10,6 +10,18 @@ const pool = new Pool({
   database: 'lightbnb'
 });
 
+const db = {
+  query: (text, params) => {
+    const start = Date.now()
+    return pool.query(text, params)
+    .then((res) => {
+      const duration = Date.now() - start
+      console.log('executed query', { text, params, duration, rows: res.rowCount })
+      return res;
+    });
+  }
+}
+
 /// Users
 
 /**
@@ -18,7 +30,7 @@ const pool = new Pool({
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithEmail = function(email) {
-  return pool.query(`
+  return db.query(`
   SELECT * 
   FROM users
   WHERE email = $1;
@@ -33,7 +45,7 @@ exports.getUserWithEmail = getUserWithEmail;
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithId = function(id) {
-  return pool.query(`
+  return db.query(`
   SELECT * 
   FROM users
   WHERE id = $1;
@@ -49,7 +61,7 @@ exports.getUserWithId = getUserWithId;
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser =  function(user) {
-  return pool.query(`
+  return db.query(`
   INSERT INTO users (name, email, password)
   VALUES
   ($1, $2, $3)
@@ -67,8 +79,7 @@ exports.addUser = addUser;
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function(guest_id, limit = 10) {
-
-  return pool.query(`
+  return db.query(`
   SELECT r.*, p.*, AVG(pr.rating) as average_rating
   FROM reservations r
   JOIN properties p ON r.property_id = p.id
@@ -80,9 +91,6 @@ const getAllReservations = function(guest_id, limit = 10) {
   LIMIT $2;
   `, [guest_id, limit])
   .then(res => res.rows);
-
-
-  // return getAllProperties(null, 2);
 }
 exports.getAllReservations = getAllReservations;
 
@@ -95,7 +103,6 @@ exports.getAllReservations = getAllReservations;
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function(options, limit = 10) {
-
   const queryParams = [];
 
   let queryString = `
@@ -142,7 +149,7 @@ const getAllProperties = function(options, limit = 10) {
   LIMIT $${queryParams.length};
   `;
 
-  return pool.query(queryString, queryParams)
+  return db.query(queryString, queryParams)
   .then(res => res.rows);
 }
 exports.getAllProperties = getAllProperties;
@@ -154,7 +161,7 @@ exports.getAllProperties = getAllProperties;
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function(property) {
-  return pool.query(`
+  return db.query(`
   INSERT INTO properties 
   (owner_id, title, description, thumbnail_photo_url, cover_photo_url, cost_per_night, street, city, province, post_code, country, parking_spaces, number_of_bathrooms, number_of_bedrooms, active)
   VALUES
